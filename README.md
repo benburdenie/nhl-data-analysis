@@ -9,6 +9,23 @@ NHL seasons, then uses the result to give playoff odds for the season in progres
 
 ![Accuracy by games played](outputs/accuracy_by_games.png)
 
+## Key findings
+
+Across 13 seasons and 402 team-seasons (16,618 games), cross-validated by season:
+
+- **The standings settle early.** Ranking teams by points % classifies 67% of teams
+  correctly after 10 games, 75% after 20 games (a quarter of the season) and 82% at
+  the halfway mark, against 50% for a random guess.
+- **Goal differential is not a better early signal for making the playoffs.** It
+  edges points % only at 10 games (68.2% vs 66.7%, about 6 of 402 team-seasons).
+  From 15 games on, points % matches or beats it, and points % gives better
+  calibrated probabilities (lower Brier score) at every checkpoint after 5 games.
+- **Combining the two barely helps,** adding at most about one percentage point.
+
+Playoff spots are awarded by points, so this measures how well each stat predicts
+the final standings. It does not test whether goal differential is the better
+guide to a team's future game results.
+
 Full results: [`outputs/findings.md`](outputs/findings.md) ·
 Current season: [`outputs/current_odds.md`](outputs/current_odds.md)
 
@@ -74,3 +91,6 @@ tests/
   goals would likely be stronger early signals but need play-by-play data.
 - Teams are treated as independent within a season, so the current odds don't
   account for remaining schedule strength.
+- An earlier version fit logistic regression on unscaled features, so the default
+  regularization blunted the points % model's probabilities. Features are now
+  standardized, and `tests/test_nhl.py` checks for that failure.
