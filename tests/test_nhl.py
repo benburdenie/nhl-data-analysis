@@ -97,6 +97,12 @@ def test_end_to_end_on_synthetic_league(tmp_path):
     # More games played should never make points % a worse guide
     assert acc.loc[10, "Points %"] <= acc.loc[41, "Points %"] <= acc.loc[82, "Points %"]
     assert (results.accuracy > 0.5).all()
+    # Final points % decides the playoffs here, so at 82 games its probabilities
+    # should beat goal differential's. Without feature scaling, regularization
+    # blunted them and points % scored worse (Brier ~0.11 vs ~0.06).
+    brier = results.pivot(index="games", columns="predictor", values="brier")
+    assert brier.loc[82, "Points %"] < brier.loc[82, "Goal differential"]
+    assert brier.loc[82, "Points %"] < 0.08
 
     plot(results, len(seasons), tmp_path / "chart.png")
     write_findings(results, seasons, 128, tmp_path / "findings.md")

@@ -10,6 +10,8 @@ Because exactly 8 teams per conference make the playoffs, a team is predicted
 
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
 
 from nhl.features import snapshot
 
@@ -22,7 +24,10 @@ PLAYOFF_SPOTS_PER_CONFERENCE = 8
 
 
 def fit(train, features):
-    model = LogisticRegression()
+    # Standardize first: LogisticRegression's default regularization penalizes
+    # coefficients, so a feature on a narrow scale (points % spans ~0.3 to 0.7)
+    # would be squeezed toward 50% probabilities far more than one on a wide scale.
+    model = make_pipeline(StandardScaler(), LogisticRegression())
     model.fit(train[features], train.made_playoffs)
     return model
 
