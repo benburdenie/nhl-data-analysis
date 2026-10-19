@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+venv/
+env/
+
+# Generated outputs (optional — remove if you want to commit charts)
+outputs/*.png
+outputs/summary.txt
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+.venv/
+.idea/
+__pycache__/
