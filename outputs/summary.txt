@@ -1,0 +1,26 @@
+=======================================================
+  NHL DATA ANALYSIS  --  KEY FINDINGS
+=======================================================
+
+SCORING
+  All-time single-season leader in dataset:
+  Nikita Kucherov (TBL, 2023-24) -- 144 pts in 81 GP
+  Highest-scoring season (avg pts/player): 2023-24
+
+GOALTENDING
+  Best single-season save pct:
+  Linus Ullmark (BOS, 2022-23)  SV%: 0.938
+  League avg SV% ranged from 0.916 (2023-24) to 0.922 (2020-21)
+  Save percentage is more stable year-to-year than wins,
+  reflecting how team defence influences goalie win totals.
+
+TEAMS
+  Best single-season points total:
+  BOS (2022-23)  -- 135 pts, +110 GD
+  Goal differential vs standings points correlation: r = 0.78
+  Teams with stronger goal differential consistently
+  finish higher in standings (r = 0.78).
+  Power-play % vs standings points correlation: r = 0.31
+  Power-play % alone is a weak predictor of final standings.
+
+=======================================================
