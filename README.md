@@ -1,111 +1,76 @@
-# NHL Data Analysis
+# How early can you call the NHL playoff race?
 
-A Python project that analyzes NHL player and team performance data across five seasons (2019-20 through 2023-24), generating visual insights using pandas and matplotlib.
+![CI](https://github.com/benburdenie/nhl-data-analysis/actions/workflows/ci.yml/badge.svg)
 
----
+After 10 or 20 games, how well does a team's record predict whether it makes the
+playoffs? And is goal differential a better early signal than the standings
+themselves? This project answers both with every regular-season game from 13 full
+NHL seasons, then uses the result to give playoff odds for the season in progress.
 
-## Features
+![Accuracy by games played](outputs/accuracy_by_games.png)
 
-- **Load and clean** skater, goalie, and team stats from CSV files
-- **Top scorer rankings** by points, goals, assists, or points-per-game
-- **Player season trends** — compare up to 3 players across seasons on one chart
-- **Goalie analysis** — save %, goals-against average, shutouts, season trends
-- **Team analysis** — standings, goal differential, goals for vs against
-- **Scatter plot** — goal differential vs standings points (correlation analysis)
-- **Full summary report** exported to `outputs/summary.txt`
-- **Interactive menu** — navigate all analyses from the terminal
+Full results: [`outputs/findings.md`](outputs/findings.md) ·
+Current season: [`outputs/current_odds.md`](outputs/current_odds.md)
 
----
+## Data
 
-## Project Structure
+`nhl/fetch.py` downloads every team's schedule and results from the NHL's public web
+API (`api-web.nhle.com`) and builds two tables:
 
-```
-nhl-data-analysis/
-├── data/
-│   ├── nhl_skaters.csv     # Skater stats (2019-20 to 2023-24)
-│   ├── nhl_goalies.csv     # Goalie stats
-│   └── nhl_teams.csv       # Team standings and goals data
-├── src/
-│   ├── main.py             # Interactive menu, program entry point
-│   ├── data_loader.py      # CSV loading and data cleaning
-│   ├── analysis.py         # Stats, rankings, filtering, summaries
-│   └── visualization.py    # All matplotlib chart generation
-├── outputs/
-│   ├── top_scorers.png
-│   ├── player_trends.png
-│   ├── goalie_save_pct.png
-│   ├── goalie_trends.png
-│   ├── goal_diff_vs_points.png
-│   ├── team_goals.png
-│   └── summary.txt
-├── README.md
-├── requirements.txt
-└── .gitignore
-```
+- `data/games.csv`: one row per completed regular-season game (teams, score, and
+  whether it ended in regulation, overtime or a shootout)
+- `data/teams.csv`: one row per team-season with its conference and whether it
+  made the playoffs
 
----
+Seasons 2010-11 to 2025-26 are included except 2012-13 (48-game lockout season),
+2019-20 (stopped at about 70 games) and 2020-21 (56 games in temporary divisions),
+so every season is 82 games under the same points rules. The fetch step checks
+that each completed season has 82 games per team and exactly 16 playoff teams, and
+stops if not.
 
-## Dataset Source
+## Method
 
-Data is based on publicly available NHL statistics from [NHL.com](https://www.nhl.com/stats/) and [Hockey Reference](https://www.hockey-reference.com/), covering the 2019-20 through 2023-24 regular seasons.
+1. **Season-to-date stats.** For every team after N games: points percentage
+   (points earned out of points available) and goal differential per game.
+   Rates rather than totals keep teams comparable at the same point in the season.
+2. **Three predictors**, each a logistic regression: points % alone (what the
+   standings show), goal differential alone, and both together.
+3. **Leave-one-season-out cross-validation.** Each season is predicted by a model
+   trained only on the other seasons, so no season helps predict itself.
+4. **Playoff format.** Eight teams per conference make it, so a team is predicted
+   in when it ranks top 8 in its conference by predicted probability. Accuracy is
+   the share of all teams classified correctly; a random guess scores 50%.
+   Brier scores measure how well calibrated the probabilities are.
 
----
-
-## Skills Demonstrated
-
-| Skill | Where used |
-|---|---|
-| Python | All source files |
-| Data cleaning | `data_loader.py` — null handling, column derivation |
-| Data analysis | `analysis.py` — rankings, filtering, groupby, correlation |
-| Data visualization | `visualization.py` — 6 distinct chart types |
-| Modular design | Separate modules for loading, analysis, and charting |
-| Analytical problem solving | `generate_summary()` draws written conclusions from data |
-
----
-
-## How to Run
+## Run it
 
 ```bash
-# Install dependencies
 pip install -r requirements.txt
-
-# Run from the project root directory
-python src/main.py
+python -m nhl.fetch      # downloads about 430 team schedules (cached in data/raw/)
+python -m nhl.analyze    # writes outputs/results.csv, findings.md and the chart
+python -m nhl.odds       # playoff odds for the season in progress
+pytest                   # unit tests plus an end-to-end run on a synthetic league
 ```
 
-**To generate all charts at once:** choose option `[6]` from the menu.
+Re-run `fetch` and `odds` during the season to update the current odds.
 
----
+## Project structure
 
-## Example Outputs
+```
+nhl/
+  fetch.py      API download, caching and data checks
+  features.py   game results to season-to-date stats after N games
+  model.py      logistic regression, cross-validation, top-8-per-conference picks
+  analyze.py    runs the study, writes the chart and findings
+  odds.py       current-season playoff odds
+tests/
+  synthetic.py  fake 32-team league with the same shape as the real data
+  test_nhl.py
+```
 
-### Top Scorers (2022-23)
-Stacked bar chart showing goals and assists for the top 10 scorers.
-Connor McDavid led with 153 points — the highest single-season total in the dataset.
+## Limitations
 
-### Goalie Save Percentages
-Linus Ullmark posted the best single-season save percentage in the dataset at .938 (2022-23), well above the league average. Save percentage is notably more consistent year-to-year than win totals, which fluctuate heavily with team quality.
-
-### Goal Differential vs Standings (All Seasons)
-Strong positive correlation (r = 0.78) — teams that outscore opponents by large margins almost always rank near the top of the standings.
-
----
-
-## Key Findings
-
-1. **Goal differential is the strongest predictor of standings** (r = 0.78). Teams like the 2022-23 Bruins (+110 GD, 135 pts) demonstrate that consistent two-way play matters more than any single stat.
-
-2. **Save percentage is more stable than wins** year-to-year. Elite goalies (Hellebuyck, Vasilevskiy) maintain .920+ SV% even on weaker teams, while win totals swing dramatically with team performance.
-
-3. **Power-play efficiency is a weaker predictor of standings** (r = 0.31) than goal differential. Teams can win consistently with average power plays if their 5-on-5 play is strong.
-
----
-
-## Future Improvements
-
-- GUI dashboard using Tkinter or Dash
-- Pull live data directly from the NHL API
-- Deadline / playoff probability tracking
-- Advanced stats: Corsi, Fenwick, expected goals (xG)
-- Export charts to a PDF summary report
+- Only points % and goal differential are used. Shot-based stats such as expected
+  goals would likely be stronger early signals but need play-by-play data.
+- Teams are treated as independent within a season, so the current odds don't
+  account for remaining schedule strength.
